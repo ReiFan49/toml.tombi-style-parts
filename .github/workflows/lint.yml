@@ -88,9 +88,9 @@ jobs:
         tombi format --quiet build/*.toml
 
         if git -C build diff --quiet; then
-          echo 'changes=1' >> "${GITHUB_OUTPUT}"
+          echo 'changes='  >> "${GITHUB_OUTPUT}"
         else
-          echo 'changes=' >> "${GITHUB_OUTPUT}"
+          echo 'changes=1' >> "${GITHUB_OUTPUT}"
         fi
 
     - name: Commit the Changes
@@ -100,13 +100,17 @@ jobs:
         CO=(
           --author="github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
         )
+        PO=()
 
         git config user.name  'github-actions[bot]'
         git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
         git config push.autoSetupRemote true
 
-        [[ -n "${{ (github.event_name == 'push' && github.event.forced) && '1' || '' }}" ]] && CO+=(--amend)
+        if [[ -n "${{ (github.event_name == 'push' && github.event.forced) && '1' || '' }}" ]]; then
+          CO+=(--amend)
+          PO+=(-f)
+        fi
 
         git add .
         git commit "${CO[@]}" -m "generated from \`${GITHUB_SHA:0:8}\`"
-        git push
+        git push "${PO[@]}"
