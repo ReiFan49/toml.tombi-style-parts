@@ -1,3 +1,9 @@
+[files]
+# When used as submodule, expected to use this subdirectory.
+exclude = [
+  '.tombi/**.toml',
+]
+
 [format.rules]
 indent-style = 'space'
 indent-width = 2
