@@ -1,0 +1,112 @@
+name: Check TOML consistency
+
+on:
+  push:
+    branches:
+    - master
+
+    paths:
+    - '.tombi.toml'
+    - 'tombi.toml'
+    - 'partials/*.toml'
+    - '.github/workflows/lint.yml'
+
+  pull_request:
+    branches:
+    - master
+
+    paths:
+    - '.tombi.toml'
+    - 'tombi.toml'
+    - 'partials/*.toml'
+
+  workflow_dispatch:
+    inputs:
+      merge:
+        description: 'Perform partial merging after linting'
+        required: true
+        type: boolean
+
+env:
+  GENERATED_BRANCH_NAME: generated
+
+jobs:
+  lint:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: tombi-toml/setup-tombi@v1.9.7
+    - name: Validate Files
+      run: tombi lint --diagnostics-format github
+    - name: Check Consistencies
+      run: tombi format --check --diff --diagnostics-format github
+
+  merge-partials:
+    name: Merge Partials
+    runs-on: ubuntu-latest
+    needs:
+    - lint
+    if: ${{
+        github.event_name == 'push' ||
+        ( github.event_name == 'workflow_dispatch' && inputs.merge )
+      }}
+    concurrency:
+      group: partial-merger
+      cancel-in-progress: true
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - uses: tombi-toml/setup-tombi@v1.9.7
+
+    - name: Prepare Worktree
+      run: |
+        WORKTREE_OPTIONS=()
+        REFSPEC_INFO=
+
+        if (git branch -a --format='%(refname:short)' | grep -qF -e "origin/${GENERATED_BRANCH_NAME}" -e "${GENERATED_BRANCH_NAME}"); then
+          REFSPEC_INFO=origin/${GENERATED_BRANCH_NAME}
+        else
+          WORKTREE_OPTIONS+=(--orphan)
+        fi
+
+        git worktree add "${WORKTREE_OPTIONS[@]}" -b "${GENERATED_BRANCH_NAME}" build ${REFSPEC_INFO}
+
+    - name: Combine with Partials
+      id: combiner
+      run: |
+        for fn in partials/*.toml; do
+          partial=$(basename "${fn}")
+
+          cat .tombi.toml "${fn}" | \
+            grep -v '^#:schema' > build/${partial}
+        done
+
+        tombi format --quiet build/*.toml
+
+        if git -C build diff --quiet; then
+          echo 'changes=1' >> "${GITHUB_OUTPUT}"
+        else
+          echo 'changes=' >> "${GITHUB_OUTPUT}"
+        fi
+
+    - name: Commit the Changes
+      if: steps.combiner.outputs.changes
+      working-directory: build
+      run: |
+        CO=(
+          --author="github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+        )
+
+        git config user.name  'github-actions[bot]'
+        git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+        git config push.autoSetupRemote true
+
+        [[ -n "${{ (github.event_name == 'push' && github.event.forced) && '1' || '' }}" ]] && CO+=(--amend)
+
+        git add .
+        git commit "${CO[@]}" -m "generated from \`${GITHUB_SHA:0:8}\`"
+        git push

@@ -1,0 +1,23 @@
+#:schema tombi://www.schemastore.org/tombi.json
+
+[[schemas]]
+path = 'https://www.schemastore.org/ruff.json'
+include = ['**/*.toml']
+exclude = [
+  '.tombi.toml',
+  'tombi.toml',
+
+  '**/*.pyproject.toml',
+  '**/pyproject.toml',
+]
+strict = true
+
+[[schemas]]
+root = 'tool.ruff'
+path = 'https://www.schemastore.org/ruff.json'
+include = [
+  '**/*.pyproject.toml',
+  '**/pyproject.toml',
+]
+exclude = []
+strict = true
