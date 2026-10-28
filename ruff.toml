@@ -1,0 +1,62 @@
+[format.rules]
+indent-style = 'space'
+indent-width = 2
+
+line-ending = 'lf'
+line-width = 144
+
+array-bracket-space-width = 0
+array-comma-space-width = 1
+inline-table-brace-space-width = 0
+inline-table-comma-space-width = 1
+key-value-equals-sign-space-width = 1
+trailing-comment-space-width = 1
+
+key-quote-style = 'single'
+string-quote-style = 'single'
+
+group-blank-lines-limit = 1
+table-blank-lines = 1
+
+key-value-equals-sign-alignment = false
+trailing-comment-alignment = true
+
+comment-style = 'preserve'
+date-time-delimiter = 'T'
+indent-sub-tables = false
+indent-table-key-value-pairs = false
+
+[lint.rules]
+dotted-keys-out-of-order = 'warn'
+key-empty = 'error'
+tables-out-of-order = 'error'
+
+[schema.format.rules.array-values-order]
+enabled = false
+
+[schema.format.rules.table-keys-order]
+# key sorting based on defined schema
+# can be split if there are blank line separator between the chunks
+enabled = true
+
+[[schemas]]
+path = 'https://www.schemastore.org/ruff.json'
+include = ['**/*.toml']
+exclude = [
+  '.tombi.toml',
+  'tombi.toml',
+
+  '**/*.pyproject.toml',
+  '**/pyproject.toml',
+]
+strict = true
+
+[[schemas]]
+root = 'tool.ruff'
+path = 'https://www.schemastore.org/ruff.json'
+include = [
+  '**/*.pyproject.toml',
+  '**/pyproject.toml',
+]
+exclude = []
+strict = true
