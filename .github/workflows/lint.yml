@@ -32,15 +32,7 @@ env:
 
 jobs:
   lint:
-    name: Validate
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v6
-    - uses: tombi-toml/setup-tombi@v1.9.7
-    - name: Validate Files
-      run: tombi lint --diagnostics-format github
-    - name: Check Consistencies
-      run: tombi format --check --diff --diagnostics-format github
+    uses: ReiFan49/local-action-build/.github/workflows/lint-toml-tombi.yml@master
 
   merge-partials:
     name: Merge Partials
